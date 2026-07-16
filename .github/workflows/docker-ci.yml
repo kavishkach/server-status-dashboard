@@ -1,0 +1,38 @@
+name: Docker CI
+
+on:
+  push:
+    branches:
+      - main
+
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Build Docker image
+        run: docker build -t status-dashboard:test .
+
+      - name: Run test container
+        run: docker run -d --name status-dashboard-test -p 8080:80 status-dashboard:test
+
+      - name: Wait for application
+        run: sleep 3
+
+      - name: Test application health
+        run: curl --fail http://localhost:8080
+
+      - name: Show container logs
+        if: always()
+        run: docker logs status-dashboard-test
+
+      - name: Remove test container
+        if: always()
+        run: docker rm -f status-dashboard-test
